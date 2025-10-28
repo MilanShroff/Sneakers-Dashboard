@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Sneakers Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+    <style>
+        body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+    padding: 20px;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center; 
+}
+
+h1, h3 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.container {
+    max-width: 900px;
+    width: 100%;
+    margin: 20px auto; 
+    padding: 25px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    border: 1px solid #ddd;
+}
+
+label {
+    display: block;
+    margin-top: 15px;
+    margin-bottom: 5px;
+    color: #555;
+    font-weight: bold;
+}
+
+input[type="text"],
+select,
+button {
+    width: calc(100% - 22px);
+    padding: 12px;
+    margin-top: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box; 
+    font-size: 16px;
+}
+
+select {
+    appearance: none; 
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007bff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5.4%200-10.4%202.3-14.2%205.9L145.6%20258.5c-3.6%204.1-3.2%2010.8.7%2014.5l10.8%2012.3c4.7%205.4%2012.7%205.3%2017.3%200L287%2087c3.7-4.2%204-10.8.4-14.6z%22/%3E%3C/svg%3E');
+    background-repeat: no-repeat, repeat;
+    background-position: right .7em top 50%, 0 0;
+    background-size: .65em auto, 100%;
+    padding-right: 2.5em;
+    cursor: pointer;
+}
+
+select::-ms-expand { 
+    display: none;
+}
+
+button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+.prediction-box {
+    margin-top: 25px;
+    padding: 15px;
+    border: 2px dashed #007bff;
+    background-color: #e0f7fa;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    color: #007bff;
+    border-radius: 6px;
+}
+
+
+#brand-chart,
+#location-chart,
+#pie-chart {
+    width: 100%;
+    margin-top: 20px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+}
+
+
+#sneakers-data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: white;
+}
+
+#sneakers-data-table th,
+#sneakers-data-table td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+#sneakers-data-table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+#sneakers-data-table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+
+    input[type="text"],
+    select,
+    button {
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    h1 {
+        font-size: 24px;
+    }
+
+    h3 {
+        font-size: 18px;
+    }
+}
+    </style>
+</head>
+<body>
+
+    <h1>Sneakers Price Prediction Dashboard</h1>
+
+    <div class="container">
+        <h3>Predict Sneaker Price</h3>
+
+
+        <label for="brand">Brand:</label>
+        <select id="brand"><option value="">Select brand</option></select>
+
+        <label for="location">Location:</label>
+        <select id="location"><option value="">Select location</option></select>
+
+        <label for="condition">Condition:</label>
+        <select id="condition"><option value="">Select condition</option></select>
+
+        <label for="model_type">Prediction Model:</label>
+        <select id="model_type">
+            <option value="linear">Linear Regression</option>
+            <option value="rf">Random Forest</option>
+        </select>
+
+        <button onclick="predictPrice()">Predict Price</button>
+
+        <div id="predicted-price" class="prediction-box">
+            No prediction yet.
+        </div>
+    </div>
+
+    <div class="container">
+        <h3>Visualizations</h3>
+        <div id="brand-chart" style="height: 400px;"></div>
+        <div id="location-chart" style="height: 400px;"></div>
+        <div id="pie-chart" style="height: 400px;"></div>
+    </div>
+
+    <div class="container">
+        <h3>All Sneakers Data</h3>
+        <table border="1" width="100%" id="sneakers-data-table">
+            <thead>
+                <tr>
+                    <th>Title</th><th>Location</th><th>Brand</th><th>Shipping Cost</th><th>Price</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        async function loadDropdownOptions() {
+            const res = await fetch("http://127.0.0.1:8000/dropdown_options");
+            const data = await res.json();
+
+            const brandSelect = document.getElementById("brand");
+            const locationSelect = document.getElementById("location");
+            const conditionSelect = document.getElementById("condition");
+
+            populateDropdown(brandSelect, data.brands);
+            populateDropdown(locationSelect, data.locations);
+            populateDropdown(conditionSelect, data.conditions);
+        }
+
+        function populateDropdown(dropdown, options) {
+            dropdown.innerHTML = '<option value="">Select</option>';
+            options.forEach(option => {
+                const optionElement = document.createElement('option');
+                optionElement.value = option;
+                optionElement.textContent = option;
+                dropdown.appendChild(optionElement);
+            });
+        }
+
+        function predictPrice() {
+            const brand = document.getElementById("brand").value;
+            const location = document.getElementById("location").value;
+            const condition = document.getElementById("condition").value;
+            const model_type = document.getElementById("model_type").value;
+
+            if (!brand || !location || !condition || !model_type) {
+                alert("Please select brand, location, condition, and model type.");
+                return;
+            }
+
+            fetch("http://127.0.0.1:8000/predict_price", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ brand, location, condition, model_type })
+            })
+            .then(res => res.json())
+            .then(result => {
+                if (result.predicted_price !== undefined) {
+                    document.getElementById("predicted-price").innerText =
+                        `Predicted Price: $${result.predicted_price.toFixed(2)}`;
+                } else {
+                    document.getElementById("predicted-price").innerText =
+                        `Error: ${result.error || "Unknown error occurred"}`;
+                }
+            })
+            .catch(error => {
+                console.error("Prediction error:", error);
+                document.getElementById("predicted-price").innerText = "Prediction failed.";
+            });
+        }
+
+        async function loadSneakersData() {
+            const res = await fetch("http://127.0.0.1:8000/sneakers");
+            const data = await res.json();
+            const limited = data.slice(0, 20);
+
+            
+            const tbody = document.querySelector("#sneakers-data-table tbody");
+            tbody.innerHTML = "";
+            limited.forEach(row => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${row.title || ""}</td><td>${row.location}</td><td>${row.brand}</td>
+                    <td>${row.shipping_cost}</td><td>${row.price}</td>`;
+                tbody.appendChild(tr);
+            });
+
+            
+            const brandCounts = {}, locationCounts = {};
+            limited.forEach(row => {
+                brandCounts[row.brand] = (brandCounts[row.brand] || 0) + 1;
+                locationCounts[row.location] = (locationCounts[row.location] || 0) + 1;
+            });
+
+            Plotly.newPlot("brand-chart", [{
+                x: Object.keys(brandCounts), y: Object.values(brandCounts), type: "bar"
+            }], { title: "Brand Frequency" });
+
+            Plotly.newPlot("location-chart", [{
+                x: Object.keys(locationCounts), y: Object.values(locationCounts), type: "bar"
+            }], { title: "Location Frequency" });
+
+            Plotly.newPlot("pie-chart", [{
+                labels: Object.keys(brandCounts), values: Object.values(brandCounts), type: "pie"
+            }], { title: "Brand Distribution" });
+        }
+
+        async function updateBrandChart() {
+            try {
+                const res = await fetch("http://127.0.0.1:8000/dynamic_brand_data");
+                const dynamicBrandData = await res.json();
+
+                const brands = dynamicBrandData.map(item => item.brand);
+                const counts = dynamicBrandData.map(item => item.count);
+
+                Plotly.react("brand-chart", [{
+                    x: brands,
+                    y: counts,
+                    type: "bar"
+                }], { title: "Brand Frequency" });
+
+            } catch (error) {
+                console.error("Error updating brand chart:", error);
+            }
+        }
+
+        window.onload = async () => {
+            await loadDropdownOptions();
+            await loadSneakersData();
+            setInterval(updateBrandChart, 5000);
+        };
+
+        const commandInput = document.getElementById('commandInput');
+        commandInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter' && commandInput.value.trim() === '/drop down') {
+                loadDropdownOptions();
+                commandInput.value = '';
+            }
+        });
+    </script>
+
+</body>
+</html>
